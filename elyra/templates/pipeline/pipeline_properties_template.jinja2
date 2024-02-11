@@ -23,6 +23,15 @@
         "ui:widget": "textarea"
       }
     },
+    {% if 'APACHE_AIRFLOW' == runtime_type %}
+    "cron": {
+      "title": "Schedule Cron",
+      "type": "string",
+      "uihints": {
+        "ui:placeholder": "Valid Cron Expression"
+      }
+    },
+    {% endif %}
     "pipeline_defaults": {
       "type": "object",
       "properties": {

@@ -53,11 +53,13 @@ class PipelineParser(LoggingConfigurable):
         source = primary_pipeline.source
 
         description = primary_pipeline.get_property("description")
+        cron = primary_pipeline.get_property("cron")
 
         pipeline_object = Pipeline(
             id=primary_pipeline.id,
             name=primary_pipeline.name,
             runtime=runtime,
+            cron=cron,
             runtime_config=runtime_config,
             source=source,
             description=description,

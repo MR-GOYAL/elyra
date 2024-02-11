@@ -14,10 +14,11 @@
 # limitations under the License.
 #
 
+from datetime import datetime
 from typing import Optional
 
 from github import Github
-from github import GithubException
+from github import GithubException, UnknownObjectException
 from traitlets.config import LoggingConfigurable
 from urllib3.util import parse_url
 
@@ -68,17 +69,30 @@ class GithubClient(LoggingConfigurable):
         :param pipeline_name: the name of the file to be created in the remote Github Repository
         :return:
         """
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S ")
+
         try:
             # Upload to github
             with open(pipeline_filepath) as input_file:
                 content = input_file.read()
-
-                self.github_repository.create_file(
-                    path=pipeline_name + ".py",
-                    message="Pushed DAG " + pipeline_name,
-                    content=content,
-                    branch=self.branch,
-                )
+                try:
+                    existing_content = self.github_repository.get_contents(pipeline_name + ".py", self.branch)
+                    self.github_repository.update_file(
+                        path=pipeline_name + ".py",
+                        message=f"Update dag at {formatted_time}",
+                        content=content,
+                        sha=existing_content.sha,
+                        branch=self.branch,
+                    )
+                    self.log.info("Pipeline successfully updated to the git")
+                except UnknownObjectException:
+                    self.github_repository.create_file(
+                        path=pipeline_name + ".py",
+                        message="Pushed DAG " + pipeline_name,
+                        content=content,
+                        branch=self.branch,
+                    )
 
             self.log.info("Pipeline successfully added to the git queue")
 

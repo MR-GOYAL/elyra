@@ -3,3 +3,4 @@
 #
 pandas
 matplotlib
+croniter==2.0.1

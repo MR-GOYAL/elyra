@@ -22,6 +22,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from croniter import croniter
 import networkx as nx
 from traitlets.config import SingletonConfigurable
 
@@ -187,6 +188,13 @@ class PipelineValidationManager(SingletonConfigurable):
 
         # Set runtime_type since it's derived from runtime_config, in case it's needed
         primary_pipeline.set("runtime_type", pipeline_type)
+
+        await self._validate_pipeline_properties(
+            pipeline_definition=pipeline_definition,
+            pipeline_type=pipeline_type,
+            pipeline_runtime=pipeline_runtime,
+            response=response,
+        )
 
         await self._validate_node_properties(
             pipeline_definition=pipeline_definition,
@@ -407,6 +415,49 @@ class PipelineValidationManager(SingletonConfigurable):
                             pipeline_runtime=pipeline_runtime,
                             pipeline_definition=pipeline_definition,
                         )
+
+    async def _validate_pipeline_properties(
+        self,
+        pipeline_definition: PipelineDefinition,
+        pipeline_type: str,
+        pipeline_runtime: str,
+        response: ValidationResponse,
+    ) -> None:
+        """
+        Validates pipeline properties
+        :param pipeline_definition: the pipeline definition to be validated
+        :param pipeline_type: name of the pipeline runtime being used e.g. kfp, airflow, generic
+        :param pipeline_runtime: name of the pipeline runtime for execution  e.g. kfp, airflow, local
+        :param response: ValidationResponse containing the issue list to be updated
+        """
+        if pipeline_runtime:
+            if pipeline_runtime != "airflow":
+                cron = pipeline_definition.primary_pipeline.get_property("cron")
+                primary_pipeline_id = pipeline_definition.primary_pipeline.id
+                if (not cron) or (cron and not self._validate_cron(cron)):
+                    response.add_message(
+                        severity=ValidationSeverity.Error,
+                        message_type="invalidPipelineProperty",
+                        message="Property is not a valid cron value.",
+                        data={
+                            "pipelineRuntime": pipeline_runtime,
+                            "pipelineType": pipeline_type,
+                            "pipelineId": primary_pipeline_id,
+                            "propertyName": "cron",
+                            "value": cron,
+                        },
+                    )
+
+    def _validate_cron(self, cron: str) -> bool:
+        """
+        Helper function to validate cron
+        :param cron: cron input provided by user
+        :return: bool
+        """
+        valid_cron_list = ["@once", "@continuous", "@hourly", "@daily", "@weekly", "@monthly", "@quarterly", "@yearly"]
+        if cron not in valid_cron_list:
+            return croniter.is_valid(cron)
+        return True
 
     async def _validate_generic_node_properties(
         self, node: Node, response: ValidationResponse, pipeline_definition: PipelineDefinition, pipeline_runtime: str

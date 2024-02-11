@@ -741,6 +741,7 @@ class PipelineDefinition(object):
             "elyra_owned_generic_properties": params_generic ^ params_both,
             "elyra_owned_properties": params_both,
             "render_property_details": ComponentProperty.render_property_details,
+            "runtime_type": runtime_type.name,
         }
         template_env = Environment(loader=loader)
         template_env.policies["json.dumps_kwargs"] = {"sort_keys": False}  # prevent automatic key sort on 'tojson'

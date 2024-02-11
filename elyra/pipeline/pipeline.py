@@ -22,6 +22,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from croniter import croniter
+
 from elyra.pipeline.pipeline_constants import ENV_VARIABLES
 from elyra.pipeline.pipeline_constants import PIPELINE_PARAMETERS
 from elyra.pipeline.pipeline_constants import RUNTIME_IMAGE
@@ -381,6 +383,7 @@ class Pipeline(object):
         id: str,
         name: str,
         runtime: str,
+        cron: Optional[str] = "@once",
         runtime_config: Optional[str] = None,
         source: Optional[str] = None,
         description: Optional[str] = None,
@@ -403,12 +406,18 @@ class Pipeline(object):
             raise ValueError("Invalid pipeline: Missing pipeline name.")
         if not runtime:
             raise ValueError("Invalid pipeline: Missing runtime.")
+        if (not cron) or (cron and not self._validate_cron(cron)):
+            raise ValueError(
+                """Invalid pipeline operation: Cron must be valid cron or one of
+                 @once, @continuous, @daily, @weekly, @monthly, @quarterly, @yearly"""
+            )
 
         self._id = id
         self._name = name
         self._description = description
         self._source = source
         self._runtime = runtime
+        self._cron = cron
         self._runtime_config = runtime_config
         self._pipeline_properties = pipeline_properties or {}
         self._pipeline_parameters = pipeline_parameters or ElyraPropertyList([])
@@ -432,6 +441,13 @@ class Pipeline(object):
         The runtime processor name that will execute the pipeline
         """
         return self._runtime
+
+    @property
+    def cron(self) -> str:
+        """
+        The runtime processor name that will execute the pipeline
+        """
+        return self._cron
 
     @property
     def runtime_config(self) -> str:
@@ -483,6 +499,18 @@ class Pipeline(object):
                 and self.source == other.source
                 and self.description == other.description
                 and self.runtime == other.runtime
+                and self.cron == other.cron
                 and self.operations == other.operations
             )
         return False
+
+    def _validate_cron(self, cron):
+        """
+        Helper function to validate cron
+        :param cron: cron input provided by user
+        :return: bool
+        """
+        valid_cron_list = ["@once", "@continuous", "@hourly", "@daily", "@weekly", "@monthly", "@quarterly", "@yearly"]
+        if cron not in valid_cron_list:
+            return croniter.is_valid(cron)
+        return True

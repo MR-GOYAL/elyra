@@ -502,6 +502,11 @@ def describe(json_option, pipeline_path):
         "json_name": "description",
         "value": primary_pipeline.get_property("description"),
     }
+    describe_dict["cron"] = {
+        "display_name": "Schedule Cron",
+        "json_name": "cron",
+        "value": primary_pipeline.get_property("cron"),
+    }
     describe_dict["type"] = {
         "display_name": "Pipeline type",
         "json_name": "pipeline_type",
@@ -618,6 +623,7 @@ def describe(json_option, pipeline_path):
         output_dict = {
             describe_dict["name"]["json_name"]: describe_dict["name"]["value"],
             describe_dict["description"]["json_name"]: describe_dict["description"]["value"],
+            describe_dict["cron"]["json_name"]: describe_dict["cron"]["value"],
             describe_dict["type"]["json_name"]: describe_dict["type"]["value"],
             describe_dict["version"]["json_name"]: describe_dict["version"]["value"],
             describe_dict["runtime"]["json_name"]: describe_dict["runtime"]["value"],

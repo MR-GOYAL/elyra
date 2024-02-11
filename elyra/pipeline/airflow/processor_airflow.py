@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 from collections import OrderedDict
-from datetime import datetime
 import json
 import os
 import re
@@ -113,10 +112,9 @@ be fully qualified (i.e., prefixed with their package names).
         Submit the pipeline for execution on Apache Airflow.
         """
         t0_all = time.time()
-        timestamp = datetime.now().strftime("%m%d%H%M%S")
         # Create an instance id that will be used to store
         # the pipelines' dependencies, if applicable
-        pipeline_instance_id = f"{pipeline.name}-{timestamp}"
+        pipeline_instance_id = f"{pipeline.name}"
 
         runtime_configuration = self._get_metadata_configuration(
             schemaspace=Runtimes.RUNTIMES_SCHEMASPACE_ID, name=pipeline.runtime_config
@@ -211,10 +209,9 @@ be fully qualified (i.e., prefixed with their package names).
         # Verify that the AirflowPipelineProcessor supports the given export format
         self._verify_export_format(pipeline_export_format)
 
-        timestamp = datetime.now().strftime("%m%d%H%M%S")
         # Create an instance id that will be used to store
         # the pipelines' dependencies, if applicable
-        pipeline_instance_id = f"{pipeline.name}-{timestamp}"
+        pipeline_instance_id = f"{pipeline.name}"
 
         absolute_pipeline_export_path = get_absolute_path(self.root_dir, pipeline_export_path)
 
@@ -512,6 +509,7 @@ be fully qualified (i.e., prefixed with their package names).
             if pipeline_description is None:
                 pipeline_description = f"Created with Elyra {__version__} pipeline editor using `{pipeline.source}`."
 
+            cron = pipeline.cron
             python_output = template.render(
                 operations_list=ordered_ops,
                 pipeline_name=pipeline_instance_id,
@@ -521,6 +519,7 @@ be fully qualified (i.e., prefixed with their package names).
                 is_paused_upon_creation="False",
                 in_cluster="True",
                 pipeline_description=pipeline_description,
+                cron=cron,
                 processor=self,
             )
 
